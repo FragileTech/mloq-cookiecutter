@@ -26,7 +26,6 @@ else:
 if __name__ == "__main__":
     cwd = pathlib.Path().resolve()
     src = cwd / 'src'
-    ci = cwd / 'ci'
 
 {% if cookiecutter.sphinx_docs == "no" %}
     shutil.rmtree(cwd / 'docs')
@@ -42,8 +41,6 @@ if __name__ == "__main__":
     src.joinpath('{{ cookiecutter.package_name }}', 'tests', 'test_cli.py').unlink()
     cwd.joinpath('tests', 'test_cli.py').unlink()
 {% endif %}
-
-    ci.joinpath('templates', 'tox.ini').unlink(missing_ok=True)
 
 {%- if cookiecutter.tests_inside_package == 'no' %}
     shutil.rmtree(src / '{{ cookiecutter.package_name }}' / 'tests')
@@ -69,19 +66,16 @@ if __name__ == "__main__":
     src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}_build.py').unlink()
 {%- endif %}
 
-    ci.joinpath('appveyor-bootstrap.py').unlink(missing_ok=True)
-    ci.joinpath('appveyor-download.py').unlink(missing_ok=True)
-    ci.joinpath('appveyor-with-compiler.cmd').unlink(missing_ok=True)
-    ci.joinpath('templates', '.appveyor.yml').unlink(missing_ok=True)
-    ci.joinpath('templates', 'appveyor.yml').unlink(missing_ok=True)
-    ci.joinpath('templates', '.travis.yml').unlink(missing_ok=True)
     cwd.joinpath('.appveyor.yml').unlink(missing_ok=True)
     cwd.joinpath('appveyor.yml').unlink(missing_ok=True)
     cwd.joinpath('.travis.yml').unlink(missing_ok=True)
 
 {%- if cookiecutter.github_actions == 'no' %}
-    ci.joinpath('templates', '.github', 'workflows', 'github-actions.yml').unlink()
-    cwd.joinpath('.github', 'workflows', 'github-actions.yml').unlink(missing_ok=True)
+    cwd.joinpath('.github', 'workflows', 'build.yml').unlink(missing_ok=True)
+cwd.joinpath('.github', 'workflows', 'documentation.yml').unlink(missing_ok=True)
+cwd.joinpath('.github', 'workflows', 'draft.yml').unlink(missing_ok=True)
+cwd.joinpath('.github', 'workflows', 'labeler.yml').unlink(missing_ok=True)
+cwd.joinpath('.github', 'workflows', 'tests.yml').unlink(missing_ok=True)
 {% endif %}
 
 {%- if cookiecutter.repo_hosting == 'no' %}
@@ -107,13 +101,6 @@ if __name__ == "__main__":
 
     width = min(140, shutil.get_terminal_size(fallback=(140, 0)).columns)
     note(" Generating CI configuration ".center(width, "#"))
-    try:
-        subprocess.check_call(['tox', '-e', 'bootstrap', '--sitepackages'])
-    except Exception:
-        try:
-            subprocess.check_call([sys.executable, '-mtox', '-e', 'bootstrap', '--sitepackages'])
-        except Exception:
-            subprocess.check_call([sys.executable, ci / 'bootstrap.py'])
     note(' Setting up pre-commit '.center(width, "#"))
     if cwd.joinpath('.git').exists():
         subprocess.check_call(['pre-commit', 'install', '--install-hooks'])
