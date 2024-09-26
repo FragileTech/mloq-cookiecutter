@@ -1,2 +1,3 @@
-sphinx>=1.3
-{{ cookiecutter.sphinx_theme|replace('_', '-') }}
+jupyter-book
+matplotlib
+numpy

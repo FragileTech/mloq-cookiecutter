@@ -127,7 +127,7 @@ test = { chain = ["test:pytest", "test:doctest"] }
 "test:doctest" = { cmd = "pytest --doctest-modules -n 0 -s -o log_cli=true -o log_cli_level=info src" }
 codecov = { cmd = "pytest -n auto -s -o log_cli=true -o log_cli_level=info --cov=./ --cov-report=xml --cov-config=pyproject.toml tests" }
 docs = {chain = ["build-docs", "serve-docs"]}
-build-docs = { cmd = "sphinx-build -b html docs/source docs/build"}
+build-docs = { cmd = "sphinx-build -b html docs/ docs/build"}
 serve-docs = { cmd = "python3 -m http.server --directory docs/build" }
 
 [tool.ruff]
