@@ -47,7 +47,7 @@ parse:
 #######################################################################################
 # HTML-specific settings
 html:
-  favicon                   : "favicon.svg"  # A path to a favicon image
+  favicon                   : "favicon.png"  # A path to a favicon image
   use_edit_page_button      : false  # Whether to add an "edit this page" button to pages. If `true`, repository information in repository: must be filled in
   use_repository_button     : false  # Whether to add a link to your repository button
   use_issues_button         : false  # Whether to add an "open an issue" button
@@ -85,10 +85,10 @@ repository:
   branch                    : "{{ cookiecutter.repo_main_branch }}"  # Which branch of the repository should be used when creating links
 
 #######################################################################################
+#######################################################################################
 # Advanced and power-user settings
 sphinx:
   extra_extensions          :   # A list of extra extensions to load by Sphinx (added to those already used by JB).
-    - autoapi.extension
     - sphinx.ext.autodoc
     - sphinx.ext.doctest
     - sphinx.ext.intersphinx
@@ -101,11 +101,12 @@ sphinx:
     - sphinx.ext.autodoc.typehints
     - sphinx.ext.githubpages
     - sphinxcontrib.mermaid
+    - autoapi.extension
   local_extensions          :   # A list of local extensions to load by sphinx specified by "name: path" items
   recursive_update          : false # A boolean indicating whether to overwrite the Sphinx config (true) or recursively update (false)
   config                    : # key-value pairs to directly over-ride the Sphinx configuration
-    autoapi_dirs              : [ "../src", ]
-    napoleon_google_docstring : True
-    napoleon_numpy_docstring  : False
+    autoapi_dirs              : [ "../src" ]
+    napoleon_google_docstring : true
+    napoleon_numpy_docstring  : false
     autodoc_typehints         : "description"
-#    autoapi_type              : "python"
+    autoapi_add_toctree_entry : true
