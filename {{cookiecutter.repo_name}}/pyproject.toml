@@ -9,7 +9,7 @@ readme = "README.md"
 requires-python = ">={{ cookiecutter.target_python_version }}"
 license = { file = "LICENSE" }
 # keywords for easier look-up on PyPI
-keywords = ["keyword_1", "keyword_2"] # ToDo: Modify according to your needs!
+keywords = [] # ToDo: Modify according to your needs!
 authors = [
     { name = "{{ cookiecutter.full_name }}", email = "{{ cookiecutter.email }}" },
 ]
@@ -45,7 +45,6 @@ classifiers = [
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
@@ -63,12 +62,7 @@ classifiers = [
     ]
 dynamic = ["version"]
 # direct dependencies of this package, installed when users `pip install {{ cookiecutter.project_slug }}` later.
-dependencies = [ # ToDo: Modify according to your needs!
-    "typer",
-    # "numpy",
-    # "matplotlib",
-    # "seaborn",
-]
+dependencies = []  # ToDo: Modify according to your needs!
 {%- if cookiecutter.repo_hosting_domain != "no" %}
 [project.urls]
 # important URLs for this project
@@ -80,7 +74,29 @@ Changelog = "https://{{ cookiecutter.repo_hosting_domain }}/{{ cookiecutter.repo
 {%- endif %}
 Tracker = "https://{{ cookiecutter.repo_hosting_domain }}/{{ cookiecutter.repo_username }}/{{ cookiecutter.repo_name }}/issues"
 {%- endif %}
-
+[project.optional-dependencies]
+lint= ["mypy", "ruff"]
+test = ["pytest", "pytest-cov", "pytest-xdist"]
+docs = [
+    "autoapi",
+    "jupyter-book",
+    "sphinx",
+    "linkify-it-py",
+    "myst-parser",
+    "myst-nb",
+    "ruyaml",
+    "sphinx-autoapi",
+    "pydata-sphinx-theme",
+    "sphinx-autodoc2",
+    "sphinxcontrib-mermaid",
+    "sphinx_book_theme",
+    "sphinx_rtd_theme",
+    "jupyter-cache",
+    "sphinx-copybutton",
+    "sphinx-togglebutton",
+    "sphinxext-opengraph",
+    "sphinxcontrib-bibtex",
+]
 [tool.rye]
 managed = true
 universal = true
@@ -120,16 +136,18 @@ exclude = [
 ]
 
 [tool.rye.scripts]
-style = { chain = ["ruff check --fix-only --unsafe-fixes tests src", "ruff format tests src"] }
-check = { chain = ["ruff check", "ruff format --diff","mypy src tests" ] }
-test = { chain = ["test:pytest", "test:doctest"] }
-"test:pytest" = { cmd = "pytest -n auto -s -o log_cli=true -o log_cli_level=info tests" }
-"test:doctest" = { cmd = "pytest --doctest-modules -n 0 -s -o log_cli=true -o log_cli_level=info src" }
-codecov = { cmd = "pytest -n auto -s -o log_cli=true -o log_cli_level=info --cov=./ --cov-report=xml --cov-config=pyproject.toml tests" }
-docs = {chain = ["build-docs", "serve-docs"]}
-build-docs = { cmd = "jupyter-book build docs/ "}
-build-docs-sphinx = { cmd = "sphinx-build -b html docs/ docs/_build/html"}
-serve-docs = { cmd = "python3 -m http.server --directory docs/_build/html" }
+lint = { cmd = "hatch run lint:all" }
+style = { cmd = "hatch run lint:style" }
+check = { cmd = "hatch run lint:check" }
+test = { cmd = "hatch run test:test" }
+doctest = { cmd = "hatch run test:doctest" }
+cov = { cmd = "hatch run test:cov" }
+no-cov = { cmd = "hatch run test:no-cov" }
+debug = { cmd = "hatch run test:debug" }
+docs = { cmd = "hatch run docs:docs" }
+build-docs = { cmd = "hatch run docs:build"}
+sphinx = { cmd = "hatch run docs:sphinx" }
+serve-docs = { cmd = "hatch run docs:serve" }
 
 [tool.ruff]
 # Assume Python 3.10
@@ -326,6 +344,7 @@ requires = ["hatch-pip-compile~=1.11.2"]
 
 # Default environment with production dependencies
 [tool.hatch.envs.default]
+installer = "uv"
 python = "{{ cookiecutter.target_python_version }}"
 post-install-commands = ["pre-commit install"]
 {%- if cookiecutter.lock_file_support %}
@@ -339,98 +358,70 @@ dependencies = []
 [tool.hatch.envs.default.scripts]
 upgrade-all = "PIP_COMPILE_UPGRADE=1 hatch env run --env {env_name} -- python --version"
 upgrade-pkg = "PIP_COMPILE_UPGRADE_PACKAGE='{args}' hatch env run --env {env_name} -- python --version"
+freeze = "hatch env run --env {env_name} -- uv pip freeze {args}"
 {%- endif %}
-
 # Test environment with test-only dependencies
 [tool.hatch.envs.test]
-dependencies = [
-    # required test dependencies
-    "coverage[toml]>=6.2",
-    "pytest",
-    "pytest-cov",
-    "pytest-mock",
-    "pytest-vcr",
-    "pytest-sugar",
-    # additional test & development dependencies
-    # ToDo: Modify according to your needs!
-    "hypothesis",
-    "jupyterlab",
-    "ipython",
-    "seaborn",
-    "pandas",
-]
+description = "Run tests and coverage"
+features = ["test"]
 [tool.hatch.envs.test.scripts]
-cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=src/{{ cookiecutter.package_name }} --cov=tests {args}"
+run_pytest = "pytest -s -o log_cli=true -o log_cli_level=info {args}"
+doctest = "run_pytest --doctest-modules -n 0 {args:src}"
+test = ["doctest", "run_pytest {args:tests}"]
+cov = "run_pytest -n ${N} --cov-report=term-missing --cov-config=pyproject.toml --cov=src/{{ cookiecutter.package_name }} --cov=tests {args}"
 no-cov = "cov --no-cov {args}"
-debug =  "cov --no-cov -s --pdb --pdbcls=IPython.core.debugger:Pdb {args}"
-
+debug =  "cov --no-cov --pdb --pdbcls=IPython.core.debugger:Pdb {args}"
+[tool.hatch.envs.test.env-vars]
+N = "auto"
 # Docs environment
 [tool.hatch.envs.docs]
-dependencies = [
-    "mkdocs~=1.6",
-    "mkdocs-material[imaging]~=9.4",
-    # Plugins
-    "mkdocs-include-markdown-plugin",
-    "mkdocs-gen-files",
-    "mkdocs-literate-nav",
-    "mkdocs-minify-plugin~=0.8",
-    "mkdocs-section-index",
-    "mkdocs-git-revision-date-localized-plugin~=1.2",
-    "mkdocstrings[python]",
-    "mkdocs-redirects~=1.2",
-    "mkdocs-glightbox~=0.4.0",
-    "mike~=2.1",
-    # Extensions
-    "pymdown-extensions~=10.9",
-    # Necessary for syntax highlighting in code blocks
-    "pygments~=2.18",
-    # Validation
-    "linkchecker~=10.4",
-    ]
+description = "Build and serve documentation using Jupyter Book and Sphinx"
+features = ["docs"]
 [tool.hatch.envs.docs.env-vars]
 SOURCE_DATE_EPOCH = "1580601600"
 PYTHONUNBUFFERED = "1"
-MKDOCS_CONFIG = "mkdocs.yml"
 [tool.hatch.envs.docs.scripts]
-build = "mkdocs build --config-file {env:MKDOCS_CONFIG} --clean --strict {args}"
-serve = "mkdocs serve --config-file {env:MKDOCS_CONFIG} --dev-addr localhost:8000 {args}"
-ci-build = "mike deploy --config-file {env:MKDOCS_CONFIG} --update-aliases {args}"
-# --ignore-url=None since the SUMMARY.md file leaves a <toc>None</toc> in sitemap.xml
-validate = "linkchecker --config .linkcheckerrc --ignore-url=/reference --ignore-url=None site"
-# https://github.com/linkchecker/linkchecker/issues/678
-build-check = [
-    "build",
-    "validate",
+features = ["docs"]
+build = [
+    "jupyter-book build docs/ ",
+    "freeze > docs/requirements.txt",
 ]
-
+serve = "python3 -m http.server --directory docs/_build/html {args}"
+sphinx = [
+    "jupyter-book config sphinx docs/ --overwrite",
+    "sphinx-build -b html docs/ docs/_build/html",
+    "freeze > docs/requirements.txt",
+]
+docs = ["build", "serve"]
 # Lint environment
 [tool.hatch.envs.lint]
+description = "Run linting checks with ruff and mypi"
 template = "lint"  # don't inherit from default!
+features = ["lint"]
+skip-install = true
 dependencies = [
     "mypy==1.11.1",
     "ruff==0.5.7",
 ]
 [tool.hatch.envs.lint.scripts]
 typing = [
-    "echo \"VERSION: `mypy --version`\"",
+    "echo \"MYPY VERSION: `mypy --version`\"",
     "mypy --install-types --non-interactive {args}"
 ]
 style = [
-    "echo \"VERSION: `ruff --version`\"",
-    "ruff check {args:.}",
-    "ruff format --check {args:.}",
+    "echo \"RUFF VERSION: `ruff --version`\"",
+    "ruff check --fix-only --unsafe-fixes {args:.}", "ruff format {args:.}",
 ]
-fix = [
-    "ruff format {args:.}",
-    "ruff check --fix {args:.}",
-    "style",  # feedback on what is not fixable
+check = [
+    "ruff check {args:.}", "ruff format --diff {args:.}","mypy src tests {args:.}" ,
 ]
 all = [
     "style",
+    "check",
     "typing",
 ]
 
 # Test matrix for various Python versions replacing the functionality of tox
 [[tool.hatch.envs.py-test.matrix]]
 template = ["test"]
-python = ["310", "311", "312"]
+python = ["39", "310", "311", "312"]
