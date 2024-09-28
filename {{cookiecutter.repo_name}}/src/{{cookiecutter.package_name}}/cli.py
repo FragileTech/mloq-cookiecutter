@@ -1,5 +1,4 @@
-"""
-Module that contains the command line app.
+"""Module that contains the command line app.
 
 Why does this file exist, and why not put this in __main__?
 
@@ -32,6 +31,15 @@ from .{{ cookiecutter.module_name }} import {{ cookiecutter.function_name }}
 @click.command()
 @click.argument("names", nargs=-1)
 def run(names):
+    """Print the result of the computation.
+
+    Args:
+        names (list): List of arguments.
+
+    Returns:
+        int: A return code.
+
+    """
     click.echo({{ cookiecutter.function_name }}(names))
 {%- elif cookiecutter.command_line_interface == "argparse" %}
 
@@ -45,22 +53,41 @@ parser.add_argument(
 
 
 def run(args=None):
+    """Print the result of the computation.
+
+    Args:
+        args (list): List of arguments.
+
+    Returns:
+        int: A return code.
+
+    Example:
+        >>> run(["1", "2", "3"])
+        1
+        0
+
+    """
     args = parser.parse_args(args=args)
     print({{ cookiecutter.function_name }}(args.names))
-    parser.exit(0)
+    return 0
 {%- else %}
 
 
 def run(argv=sys.argv):
-    """
+    """Print the result of the computation.
+
     Args:
-        argv (list): List of arguments
+        argv (list): List of arguments.
 
     Returns:
-        int: A return code
+        int: A return code.
 
-    Does stuff.
+    Example:
+        >>> run(["1", "2", "3"])
+        1
+        0
+
     """
     print({{ cookiecutter.function_name }}(argv))
-    sys.exit(0)
+    return 0
 {%- endif %}

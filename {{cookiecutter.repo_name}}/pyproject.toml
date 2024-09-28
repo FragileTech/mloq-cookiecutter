@@ -62,7 +62,7 @@ classifiers = [
     ]
 dynamic = ["version"]
 # direct dependencies of this package, installed when users `pip install {{ cookiecutter.project_slug }}` later.
-dependencies = []  # ToDo: Modify according to your needs!
+dependencies = ["flogging", "pre-commit"]  # ToDo: Modify according to your needs!
 {%- if cookiecutter.repo_hosting_domain != "no" %}
 [project.urls]
 # important URLs for this project
@@ -74,6 +74,9 @@ Changelog = "https://{{ cookiecutter.repo_hosting_domain }}/{{ cookiecutter.repo
 {%- endif %}
 Tracker = "https://{{ cookiecutter.repo_hosting_domain }}/{{ cookiecutter.repo_username }}/{{ cookiecutter.repo_name }}/issues"
 {%- endif %}
+[project.scripts]
+{{ cookiecutter.project_slug }} = "{{ cookiecutter.package_name }}.__main__:run"
+
 [project.optional-dependencies]
 lint= ["mypy", "ruff"]
 test = ["pytest", "pytest-cov", "pytest-xdist"]
@@ -203,8 +206,9 @@ ignore = [
     "D100", "D211", "D213", "D104", "D203", "D301", "D407", "S101",
     "FBT001", "FBT002", "FIX002", "ISC001", "PLR0913", "RUF012", "TD003",
     "PTH123", "PLR6301", "PLR0917", "S311", "S403", "PLR0914", "PLR0915", "S608",
-    "EM102", "PTH111", "FIX004", "UP035", "PLW2901", "S318", "S408", 'S405',
-    'E902', "TD001", "TD002", "FIX001",
+    "EM102", "PTH111", "FIX004", "UP035", "PLW2901", "S318", "S404",
+    "S408", 'S405', 'S607', 'S603',
+    'E902', "TD001", "TD002", "FIX001", "T201",
 ]
 # Allow autofix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
@@ -365,6 +369,7 @@ freeze = "hatch env run --env {env_name} -- uv pip freeze {args}"
 description = "Run tests and coverage"
 features = ["test"]
 [tool.hatch.envs.test.scripts]
+{{ cookiecutter.command_line_interface_bin_name }} = "python -m {{ cookiecutter.command_line_interface_bin_name }} {args}"
 run_pytest = "pytest -s -o log_cli=true -o log_cli_level=info {args}"
 doctest = "run_pytest --doctest-modules -n 0 {args:src}"
 test = ["doctest", "run_pytest {args:tests}"]
@@ -400,8 +405,8 @@ template = "lint"  # don't inherit from default!
 features = ["lint"]
 skip-install = true
 dependencies = [
-    "mypy==1.11.1",
-    "ruff==0.5.7",
+    "mypy",
+    "ruff",
 ]
 [tool.hatch.envs.lint.scripts]
 typing = [
@@ -413,7 +418,7 @@ style = [
     "ruff check --fix-only --unsafe-fixes {args:.}", "ruff format {args:.}",
 ]
 check = [
-    "ruff check {args:.}", "ruff format --diff {args:.}","mypy src tests {args:.}" ,
+    "ruff check {args:.}", "ruff format --diff {args:.}","mypy {args:.}" ,
 ]
 all = [
     "style",
