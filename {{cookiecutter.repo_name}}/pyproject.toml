@@ -236,7 +236,7 @@ docstring-quotes = "double"
 ]
 # Enable reformatting of code snippets in docstrings.
 [tool.ruff.format]
-docstring-code-line-length = "{{ cookiecutter.docstring_code_line_length }}"
+docstring-code-line-length = {{ cookiecutter.docstring_code_line_length }}
 docstring-code-format = true
 indent-style = "space"
 line-ending = "auto"
