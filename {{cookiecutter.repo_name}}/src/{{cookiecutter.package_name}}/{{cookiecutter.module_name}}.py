@@ -6,9 +6,10 @@ from ._{{ cookiecutter.module_name }} import lib as _lib
 def {{ cookiecutter.function_name }}(args):
     """Compute a placeholder for the {{ cookiecutter.function_name }} function.
 
-     Examples:
+     Example:
         >>> compute(["1", "2", "3"])
         '1'
+
     """
     args = [_ffi.new("char[]", arg.encode()) for arg in args]
     result = _lib.{{ cookiecutter.function_name }}(len(args), _ffi.new("char *[]", args))
@@ -25,9 +26,10 @@ except ImportError:
     def {{ cookiecutter.function_name }}(args):
         """Compute a placeholder for the {{ cookiecutter.function_name }} function.
 
-         Examples:
+         Example:
             >>> compute(["1", "2", "3"])
             '1'
+
         """
         return max(args, key=len)
 {% else -%}
@@ -41,9 +43,10 @@ __all__ = [
 def {{ cookiecutter.function_name }}(args):
     """Compute a placeholder for the {{ cookiecutter.function_name }} function.
 
-     Examples:
+    Example:
         >>> compute(["1", "2", "3"])
         '1'
+
     """
     return max(args, key=len)
 {% endif -%}

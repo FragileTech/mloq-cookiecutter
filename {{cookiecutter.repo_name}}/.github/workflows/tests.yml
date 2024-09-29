@@ -38,4 +38,4 @@ jobs:
           hatch run lint:all
       - name: Run Tests
         run: |
-          hatch run test:pytest
+          hatch run test:test
