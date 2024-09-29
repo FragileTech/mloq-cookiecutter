@@ -1,137 +1,27 @@
+import logging
+import os
 import pathlib
 import shutil
 import subprocess
 import sys
 
-
 try:
-    from click.termui import secho
+    import flogging
+    flogging.setup()
 except ImportError:
-    warn = note = success = print
-else:
-    def warn(text):
-        for line in text.splitlines():
-            secho(line, fg="white", bg="red", bold=True)
+    pass
 
-    def note(text):
-        for line in text.splitlines():
-            secho(line, fg="yellow", bold=True)
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(message)s')
+logger = logging.getLogger(__name__)
 
-    def success(text):
-        for line in text.splitlines():
-            secho(line, fg="green", bold=True)
-
-
-
-if __name__ == "__main__":
-    cwd = pathlib.Path().resolve()
-    src = cwd / 'src'
-
-{% if cookiecutter.sphinx_docs == "no" %}
-    shutil.rmtree(cwd / 'docs')
-    cwd.joinpath('.readthedocs.yml').unlink()
-{%- elif 'readthedocs' not in cookiecutter.sphinx_docs_hosting %}
-    cwd.joinpath('.readthedocs.yml').unlink()
-{% endif %}
-
-
-{%- if cookiecutter.command_line_interface == 'no' %}
-    src.joinpath('{{ cookiecutter.package_name }}', '__main__.py').unlink()
-    src.joinpath('{{ cookiecutter.package_name }}', 'cli.py').unlink()
-    src.joinpath('{{ cookiecutter.package_name }}', 'tests', 'test_cli.py').unlink()
-    cwd.joinpath('tests', 'test_cli.py').unlink()
-{% endif %}
-
-{%- if cookiecutter.tests_inside_package == 'no' %}
-    shutil.rmtree(src / '{{ cookiecutter.package_name }}' / 'tests')
-{%- else %}
-    shutil.rmtree('tests')
-{%- endif %}
-
-{%- if cookiecutter.c_extension_support == 'no' %}
-    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}.c').unlink()
-    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}.pyx').unlink()
-    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}_build.py').unlink()
-{%- elif cookiecutter.c_extension_support == 'cffi' %}
-    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}.pyx').unlink()
-{%- elif cookiecutter.c_extension_support == 'cython' %}
-    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}.c').unlink()
-    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}_build.py').unlink()
-    try:
-        subprocess.check_call(['tox', '-e', 'cythonize'])
-    except Exception:
-        subprocess.check_call([sys.executable, '-mtox', '-e', 'cythonize'])
-{%- else %}
-    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}.pyx').unlink()
-    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}_build.py').unlink()
-{%- endif %}
-
-    cwd.joinpath('.appveyor.yml').unlink(missing_ok=True)
-    cwd.joinpath('appveyor.yml').unlink(missing_ok=True)
-    cwd.joinpath('.travis.yml').unlink(missing_ok=True)
-
-{%- if cookiecutter.github_actions == 'no' %}
-    cwd.joinpath('.github', 'workflows', 'build.yml').unlink(missing_ok=True)
-cwd.joinpath('.github', 'workflows', 'documentation.yml').unlink(missing_ok=True)
-cwd.joinpath('.github', 'workflows', 'draft.yml').unlink(missing_ok=True)
-cwd.joinpath('.github', 'workflows', 'labeler.yml').unlink(missing_ok=True)
-cwd.joinpath('.github', 'workflows', 'tests.yml').unlink(missing_ok=True)
-{% endif %}
-
-{%- if cookiecutter.repo_hosting == 'no' %}
-    cwd.joinpath('CONTRIBUTING.rst').unlink()
-{% endif %}
-
-{%- if cookiecutter.setup_py_uses_setuptools_scm == 'yes' %}
-    cwd.joinpath('MANIFEST.in').unlink()
-{%- else %}
-    src.joinpath('{{ cookiecutter.package_name }}', '_version.py').unlink(missing_ok=True)
-{% endif %}
-
-{%- if cookiecutter.version_manager == 'bump2version' %}
-    cwd.joinpath('tbump.toml').unlink()
-{%- elif cookiecutter.version_manager == 'tbump' %}
-    cwd.joinpath('.bumpversion.cfg').unlink()
-{% endif %}
-
-{%- if cookiecutter.license == "no" %}
-    cwd.joinpath('LICENSE').unlink()
-{% endif %}
-    cwd.joinpath('setup.cfg').unlink(missing_ok=True)
-
-    width = min(140, shutil.get_terminal_size(fallback=(140, 0)).columns)
-    note(" Generating CI configuration ".center(width, "#"))
-    note(' Setting up pre-commit '.center(width, "#"))
-    if cwd.joinpath('.git').exists():
-        subprocess.check_call(['pre-commit', 'install', '--install-hooks'])
-        subprocess.check_call(['pre-commit', 'autoupdate'])
-    else:
-        print('Skipping precommit install.')
-    success(' Successfully created `{{ cookiecutter.repo_name }}` '.center(width, "#"))
-    print('See .cookiecutterrc for instructions on regenerating the project.')
-    note('To get started run these:')
-    print('''
-cd {{ cookiecutter.repo_name }}
-git init
-pre-commit install --install-hooks
-pre-commit autoupdate
-git add --all
-git commit -m "Add initial project skeleton."
-git tag v{{ cookiecutter.version }}
-git remote add origin git@{{ cookiecutter.repo_hosting_domain }}:{{ cookiecutter.repo_username }}/{{ cookiecutter.repo_name }}.git
-git push -u origin {{ cookiecutter.repo_main_branch }} v{{ cookiecutter.version }}
-''')
-    command_line_interface_bin_name = '{{ cookiecutter.command_line_interface_bin_name }}'
-    while command_line_interface_bin_name.endswith('.py'):
-        command_line_interface_bin_name = command_line_interface_bin_name[:-3]
-
-        if command_line_interface_bin_name == '{{ cookiecutter.package_name }}':
-            warn('''
+# Constants for messages
+ERROR_MESSAGE = '''
 ┌───────────────────────────────────────────────────────────────────────┐
 │ ERROR:                                                                │
 │                                                                       │
 │     Your result package is broken. Your bin script named              │
-│     {0} │
+│     "{command_line_interface_bin_name}" will shadow your package.     │
 │                                                                       │
 │     Python automatically adds the location of scripts to              │
 │     `sys.path`. Because of that, the bin script will fail             │
@@ -142,10 +32,142 @@ git push -u origin {{ cookiecutter.repo_main_branch }} v{{ cookiecutter.version 
 │                                                                       │
 │     * Remove the ".py" suffix from `command_line_interface_bin_name`. │
 │                                                                       │
-│     * Use a different `package_name` {1} │
+│     * Use a different `package_name` (not "{bin_name_without_ext}").  │
 └───────────────────────────────────────────────────────────────────────┘
-'''.format(
-                '"{{ cookiecutter.command_line_interface_bin_name }}" will shadow your package.'.ljust(65),
-                '(not "{0}").'.format(command_line_interface_bin_name).ljust(32)))
-            sys.exit(1)
-        break
+'''
+
+GET_STARTED_INSTRUCTIONS = '''
+cd {{ cookiecutter.repo_name }}
+git init
+pre-commit install --install-hooks
+pre-commit autoupdate
+git add --all
+git commit -m "Add initial project skeleton."
+git tag v{{ cookiecutter.version }}
+git remote add origin git@{{ cookiecutter.repo_hosting_domain }}:{{ cookiecutter.repo_username }}/{{ cookiecutter.repo_name }}.git
+git push -u origin {{ cookiecutter.repo_main_branch }} v{{ cookiecutter.version }}
+'''
+
+def main():
+    """Adjust project structure based on cookiecutter variables."""
+    cwd = pathlib.Path().resolve()
+    src = cwd / 'src'
+
+    # Handle Sphinx docs
+    {% if cookiecutter.sphinx_docs == "no" %}
+    shutil.rmtree(cwd / 'docs', ignore_errors=True)
+    cwd.joinpath('.readthedocs.yml').unlink(missing_ok=True)
+    {% elif 'readthedocs' not in cookiecutter.sphinx_docs_hosting %}
+    cwd.joinpath('.readthedocs.yml').unlink(missing_ok=True)
+    {% endif %}
+
+    # Handle command-line interface
+    {% if cookiecutter.command_line_interface == 'no' %}
+    src.joinpath('{{ cookiecutter.package_name }}', '__main__.py').unlink(missing_ok=True)
+    src.joinpath('{{ cookiecutter.package_name }}', 'cli.py').unlink(missing_ok=True)
+    src.joinpath('{{ cookiecutter.package_name }}', 'tests', 'test_cli.py').unlink(missing_ok=True)
+    cwd.joinpath('tests', 'test_cli.py').unlink(missing_ok=True)
+    {% endif %}
+
+    # Handle test location
+    {% if cookiecutter.tests_inside_package == 'no' %}
+    shutil.rmtree(src / '{{ cookiecutter.package_name }}' / 'tests', ignore_errors=True)
+    {% else %}
+    shutil.rmtree(cwd / 'tests', ignore_errors=True)
+    {% endif %}
+
+    # Handle C extension support
+    {% if cookiecutter.c_extension_support == 'no' %}
+    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}.c').unlink(missing_ok=True)
+    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}.pyx').unlink(missing_ok=True)
+    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}_build.py').unlink(missing_ok=True)
+    {% elif cookiecutter.c_extension_support == 'cffi' %}
+    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}.pyx').unlink(missing_ok=True)
+    {% elif cookiecutter.c_extension_support == 'cython' %}
+    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}.c').unlink(missing_ok=True)
+    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}_build.py').unlink(missing_ok=True)
+    try:
+        subprocess.check_call(['tox', '-e', 'cythonize'])
+    except subprocess.CalledProcessError:
+        subprocess.check_call([sys.executable, '-m', 'tox', '-e', 'cythonize'])
+    {% else %}
+    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}.pyx').unlink(missing_ok=True)
+    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}_build.py').unlink(missing_ok=True)
+    {% endif %}
+
+    # Remove CI configuration files
+    cwd.joinpath('.appveyor.yml').unlink(missing_ok=True)
+    cwd.joinpath('appveyor.yml').unlink(missing_ok=True)
+    cwd.joinpath('.travis.yml').unlink(missing_ok=True)
+
+    # Handle GitHub Actions
+    {% if cookiecutter.github_actions == 'no' %}
+    github_workflows = cwd.joinpath('.github', 'workflows')
+    for workflow_file in ['build.yml', 'documentation.yml', 'draft.yml', 'labeler.yml', 'tests.yml']:
+        github_workflows.joinpath(workflow_file).unlink(missing_ok=True)
+    {% endif %}
+
+    # Remove CONTRIBUTING file if no repository hosting
+    {% if cookiecutter.repo_hosting == 'no' %}
+    cwd.joinpath('CONTRIBUTING.rst').unlink(missing_ok=True)
+    {% endif %}
+
+    # Handle versioning files
+    {% if cookiecutter.setup_py_uses_setuptools_scm == 'yes' %}
+    cwd.joinpath('MANIFEST.in').unlink(missing_ok=True)
+    {% else %}
+    src.joinpath('{{ cookiecutter.package_name }}', '_version.py').unlink(missing_ok=True)
+    {% endif %}
+
+    # Remove version manager files
+    {% if cookiecutter.version_manager == 'bump2version' %}
+    cwd.joinpath('tbump.toml').unlink(missing_ok=True)
+    {% elif cookiecutter.version_manager == 'tbump' %}
+    cwd.joinpath('.bumpversion.cfg').unlink(missing_ok=True)
+    {% endif %}
+
+    # Remove LICENSE if not applicable
+    {% if cookiecutter.license == "no" %}
+    cwd.joinpath('LICENSE').unlink(missing_ok=True)
+    {% endif %}
+
+    # Remove setup.cfg
+    cwd.joinpath('setup.cfg').unlink(missing_ok=True)
+
+    # Determine terminal width for formatting
+    width = min(140, shutil.get_terminal_size(fallback=(140, 0)).columns)
+
+    # Logging messages
+    logger.info(" Generating CI configuration ".center(width, "#"))
+    logger.info(" Setting up pre-commit ".center(width, "#"))
+
+    # Set up pre-commit hooks
+    if cwd.joinpath('.git').exists():
+        try:
+            subprocess.check_call(['pre-commit', 'install', '--install-hooks'])
+            subprocess.check_call(['pre-commit', 'autoupdate'])
+        except (subprocess.CalledProcessError, FileNotFoundError)as e:
+            logger.error(f"Failed to set up pre-commit: {e}")
+    else:
+        logger.info('Skipping pre-commit install.')
+
+    # Success message
+    logger.info(f" Successfully created `{{ cookiecutter.repo_name }}` ".center(width, "#"))
+    logger.info('See .cookiecutterrc for instructions on regenerating the project.')
+    logger.info('To get started, run these commands:')
+    logger.info(GET_STARTED_INSTRUCTIONS)
+
+    # Check for potential package name shadowing
+    command_line_interface_bin_name = '{{ cookiecutter.command_line_interface_bin_name }}'
+    bin_name_without_ext = os.path.splitext(command_line_interface_bin_name)[0]
+
+    if bin_name_without_ext == '{{ cookiecutter.package_name }}':
+        error_msg = ERROR_MESSAGE.format(
+            command_line_interface_bin_name=command_line_interface_bin_name,
+            bin_name_without_ext=bin_name_without_ext
+        )
+        logger.error(error_msg)
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

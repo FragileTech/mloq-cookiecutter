@@ -1,75 +1,280 @@
 name: Build
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - {{ cookiecutter.repo_main_branch }}
+  pull_request:
+    branches:
+      - {{ cookiecutter.repo_main_branch }}
+
+env:
+  PROJECT_NAME: {{ cookiecutter.package_name }}
+  PROJECT_DIR: src/{{ cookiecutter.package_name }}
+  VERSION_FILE: src/{{ cookiecutter.package_name }}/version.py
+  DEFAULT_BRANCH: {{ cookiecutter.repo_main_branch }}
+  BOT_NAME: fragile-bot
+  BOT_EMAIL: bot@fragile.tech
+  DOCKER_ORG: fragiletech
+#  LOCAL_CACHE: |
+#    ~/.local/bin
+#    ~/.local/lib/python3.*/site-packages
+#    /opt/homebrew
+
 
 jobs:
-  test:
-
+  style-check:
+    name: Style check
+    if: "!contains(github.event.head_commit.message, 'Bump version')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: actions/checkout
+        uses: actions/checkout@v4
+      - name: Setup Rye
+        id: setup-rye
+        uses: eifinger/setup-rye@v4
+        with:
+          enable-cache: true
+          cache-prefix: ubuntu-20.04-rye-check-{% raw %}${{ hashFiles('pyproject.toml') }}{% endraw %}
+      - name: Run style check and linter
+        run: |
+          set -x
+          rye fmt --check
+          rye lint
+  pytest-rye:
+    name: Run pytest and coverage with Rye
+    if: "!contains(github.event.head_commit.message, 'Bump version')"
     runs-on: {% raw %}${{ matrix.os }}{% endraw %}
     strategy:
       matrix:
-        os: [ubuntu-latest]
-        python_version: ['{{ cookiecutter.target_python_version }}']
+        os: ["ubuntu-latest", "macos-latest"]
+        python-version: ['{{ cookiecutter.target_python_version }}']
 
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: {% raw %}${{ matrix.python_version }}{% endraw %}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install hatch pre-commit
-          hatch env create
-      - name: Lint and typecheck
-        run: |
-          hatch run lint:all
-      - name: Run Tests
-        run: |
-          hatch run test:pytest
-      - uses: codecov/codecov-action@v4
-        with:
-          token: {% raw %}${{ secrets.CODECOV_TOKEN }}{% endraw %}
-          fail_ci_if_error: true
-          verbose: true
 
-  release:
+      - name: Setup Rye
+        id: setup-rye
+        uses: eifinger/setup-rye@v4
+        with:
+          enable-cache: true
+          cache-prefix: {% raw %}${{ matrix.os }}-latest-rye-test-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}{% endraw %}
+
+#      - name: actions/cache
+#        uses: actions/cache@v4
+#        with:
+#          path: {% raw %}${{ env.LOCAL_CACHE }}{% endraw %}
+#          key: {% raw %}${{ matrix.os }}-latest-rye-test-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}{% endraw %}
+#          restore-keys: {% raw %}${{ matrix.os }}-latest-rye-test-${{ matrix.python-version }}{% endraw %}
+
+      - name: Install Ubuntu test and package dependencies
+        if: {% raw %}${{ matrix.os == 'ubuntu-latest' }}{% endraw %}
+        run: |
+          set -x
+          rye pin --relaxed cpython@{% raw %}${{ matrix.python-version }}{% endraw %}
+          rye sync --all-features
+
+      - name: Install MacOS test and package dependencies
+        if: {% raw %}${{ matrix.os == 'macos-latest' }}{% endraw %}
+        run: |
+          set -x
+          rye pin --relaxed cpython@{% raw %}${{ matrix.python-version }}{% endraw %}
+          rye sync --all-features
+
+      - name: Run Pytest on MacOS
+        if: {% raw %}${{ matrix.os == 'macos-latest' }}{% endraw %}
+        run: |
+          set -x
+          rye run test
+
+      - name: Run code coverage on Ubuntu
+        if: {% raw %}${{ matrix.os == 'ubuntu-latest' }}{% endraw %}
+        run: |
+          set -x
+          rye run cov
+
+      - name: Upload coverage report
+        env:
+          CODECOV_TOKEN: {% raw %}${{ secrets.CODECOV_TOKEN }}{% endraw %}
+        if: {% raw %}${{ matrix.python-version == {% endraw %}'{{ cookiecutter.target_python_version }}' {% raw %} && matrix.os == 'ubuntu-latest' && env.CODECOV_TOKEN != '' }}{% endraw %}
+        uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: false # optional (default = false)
+          files: ./coverage.xml
+          flags: unittests # optional
+          name: codecov-umbrella # optional
+          token: {% raw %}${{ secrets.CODECOV_TOKEN }}{% endraw %} # required
+          verbose: true # optional (default = false)
+
+  build-test-package:
+    name: Build and test the package
+    needs: style-check
     runs-on: ubuntu-latest
-    environment: release
-    needs: test
-    if: startsWith(github.ref, 'refs/tags/')
+    if: "!contains(github.event.head_commit.message, 'Bump version')"
     permissions:
       contents: write
       id-token: write
-
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python {% raw %}${{ matrix.python_version }}{% endraw %}
-        uses: actions/setup-python@v5
+      - name: actions/checkout
+        uses: actions/checkout@v4
         with:
-          python-version: '{{ cookiecutter.target_python_version }}'
-      - name: Install dependencies
-        shell: bash
+          persist-credentials: false
+          fetch-depth: 100
+      - name: Set Git user
         run: |
-          python -m pip install --upgrade pip
-          pip install hatch pre-commit
-      - name: Build
+          git config --global user.name {% raw %}"${{ env.BOT_NAME }}"{% endraw %}
+          git config --global user.email {% raw %}"${{ env.BOT_EMAIL }}"{% endraw %}
+
+      - name: Setup Rye
+        id: setup-rye
+        uses: eifinger/setup-rye@v4
+        with:
+          enable-cache: true
+          cache-prefix: ubuntu-latest-rye-build-{{ cookiecutter.target_python_version }}-{% raw %}${{ hashFiles('pyproject.toml') }}{% endraw %}
+#      - name: actions/cache
+#        uses: actions/cache@v4
+#        with:
+#          path: {% raw %}${{ env.LOCAL_CACHE }}{% endraw %}
+#          key: ubuntu-latest-system-build-{{ cookiecutter.target_python_version }}-{% raw %}${{ hashFiles('pyproject.toml') }}{% endraw %}
+#          restore-keys: ubuntu-latest-system-test
+      - name: Install build dependencies
         run: |
-          hatch build
+          set -x
+          rye pin --relaxed cpython@{{ cookiecutter.target_python_version }}
+          rye install bump2version
+          rye install twine
+
+      - name: Create unique version for test.pypi
+        run: |
+          set -x
+          current_version=$(grep __version__ $VERSION_FILE | cut -d\" -f2)
+          ts=$(date +%s)
+          new_version="$current_version$ts"
+          bumpversion --current-version $current_version --new-version $new_version patch $VERSION_FILE
+
+      - name: Build package
+        run: |
+          set -x
+          rye build --clean
+          twine check dist/*
+
       - name: Publish 📦 to Test PyPI
-        if: startsWith(github.ref, 'refs/heads/main')
+        env:
+          TEST_PYPI_PASS: {% raw %}${{ secrets.TEST_PYPI_PASS }}{% endraw %}
+        if: "'$TEST_PYPI_PASS' != ''"
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          skip_existing: true
-          user: __token__
-          password: {% raw %}${{ secrets.TEST_PYPI_SECRECT }}{% endraw %}
-          packages-dir: dist/
+          password: {% raw %}${{ secrets.TEST_PYPI_PASS }}{% endraw %}
           repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+
+  bump-version:
+    name: Bump package version
+    env:
+      BOT_AUTH_TOKEN: {% raw %}${{ secrets.BOT_AUTH_TOKEN }}{% endraw %}
+    if: "!contains(github.event.head_commit.message, 'Bump version') && github.ref == 'refs/heads/{{ cookiecutter.repo_main_branch }}' && '$BOT_AUTH_TOKEN' != ''"
+    runs-on: ubuntu-latest
+    needs:
+      - pytest-rye
+      - build-test-package
+    steps:
+      - name: actions/checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 100
+      - name: current_version
+        run: |
+          set -x
+          echo "current_version=$(grep __version__ $VERSION_FILE | cut -d\" -f2)" >> $GITHUB_ENV
+          echo "version_file=$VERSION_FILE" >> $GITHUB_ENV
+          echo 'bot_name="${BOT_NAME}"' >> $GITHUB_ENV
+          echo 'bot_email="${BOT_EMAIL}"' >> $GITHUB_ENV
+      - name: FragileTech/bump-version
+        uses: FragileTech/bump-version@main
+        with:
+          current_version: {% raw %}"${{ env.current_version }}"{% endraw %}
+          files: {% raw %}"${{ env.version_file }}"{% endraw %}
+          commit_name: {% raw %}"${{ env.bot_name }}"{% endraw %}
+          commit_email: {% raw %}"${{ env.bot_email }}"{% endraw %}
+          login: {% raw %}"${{ env.bot_name }}"{% endraw %}
+          token: {% raw %}"${{ secrets.BOT_AUTH_TOKEN }}"{% endraw %}
+
+  release-package:
+    name: Release PyPI package
+    env:
+      PYPI_PASS: {% raw %}${{ secrets.PYPI_PASS }}{% endraw %}
+    if: "contains(github.event.head_commit.message, 'Bump version') && github.ref == 'refs/heads/{{ cookiecutter.repo_main_branch }}' && '$PYPI_PASS' != ''"
+    permissions:
+      contents: write
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: actions/checkout
+        uses: actions/checkout@v4
+      - name: Setup Rye
+        id: setup-rye
+        uses: eifinger/setup-rye@v4
+        with:
+          enable-cache: true
+          cache-prefix: ubuntu-latest-rye-release-{{ cookiecutter.target_python_version }}-{% raw %}${{ hashFiles('pyproject.toml') }}{% endraw %}
+      - name: Install dependencies
+        run: |
+          set -x
+          rye pin --relaxed cpython@{{ cookiecutter.target_python_version }}
+          rye install twine
+
+      - name: Build package
+        run: |
+          set -x
+          rye build --clean
+          twine check dist/*
+
       - name: Publish 📦 to PyPI
-        if: startsWith(github.ref, 'refs/heads/main')
+        env:
+          PYPI_PASS: {% raw %}${{ secrets.PYPI_PASS }}{% endraw %}
+        if: "'$PYPI_PASS' != ''"
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          user: __token__
-          password: {% raw %}${{ secrets.PYPI_SECRECT }}{% endraw %}
-          packages-dir: dist/
+          password: {% raw %}${{ secrets.PYPI_PASS }}{% endraw %}
+          skip-existing: true
+#
+#  release:
+#    runs-on: ubuntu-latest
+#    environment: release
+#    needs: test
+#    if: startsWith(github.ref, 'refs/tags/')
+#    permissions:
+#      contents: write
+#      id-token: write
+#
+#    steps:
+#      - uses: actions/checkout@v4
+#      - name: Set up Python {% raw %}${{ matrix.python-version }}{% endraw %}
+#        uses: actions/setup-python@v5
+#        with:
+#          python-version: '{{ cookiecutter.target_python_version }}'
+#      - name: Install dependencies
+#        shell: bash
+#        run: |
+#          python -m pip install --upgrade pip
+#          pip install hatch pre-commit
+#      - name: Build
+#        run: |
+#          hatch build
+#      - name: Publish 📦 to Test PyPI
+#        if: startsWith(github.ref, 'refs/heads/main')
+#        uses: pypa/gh-action-pypi-publish@release/v1
+#        with:
+#          skip_existing: true
+#          user: __token__
+#          password: {% raw %}${{ secrets.TEST_PYPI_SECRECT }}{% endraw %}
+#          packages-dir: dist/
+#          repository-url: https://test.pypi.org/legacy/
+#      - name: Publish 📦 to PyPI
+#        if: startsWith(github.ref, 'refs/heads/main')
+#        uses: pypa/gh-action-pypi-publish@release/v1
+#        with:
+#          user: __token__
+#          password: {% raw %}${{ secrets.PYPI_SECRECT }}{% endraw %}
+#          packages-dir: dist/

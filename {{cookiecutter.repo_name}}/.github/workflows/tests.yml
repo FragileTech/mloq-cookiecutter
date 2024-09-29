@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: ["main"]
+    branches: ["{{ cookiecutter.repo_main_branch }}"]
   pull_request:
-    branches: ["main"]
+    branches: ["{{ cookiecutter.repo_main_branch }}"]
 
 concurrency:
   group: {% raw %}${{ github.workflow }}-${{ github.head_ref || github.run_id }}{% endraw %}
@@ -21,7 +21,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python {% raw %}${{ matrix.python_version }}{% endraw %}
@@ -38,4 +38,4 @@ jobs:
           hatch run lint:all
       - name: Run Tests
         run: |
-          hatch run test:pytest
+          hatch run test:test
