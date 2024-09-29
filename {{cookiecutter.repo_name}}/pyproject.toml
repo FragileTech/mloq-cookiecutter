@@ -62,7 +62,13 @@ classifiers = [
     ]
 dynamic = ["version"]
 # direct dependencies of this package, installed when users `pip install {{ cookiecutter.project_slug }}` later.
-dependencies = ["flogging", "pre-commit"]  # ToDo: Modify according to your needs!
+dependencies = [
+    "flogging",
+    "pre-commit",
+    {%- if cookiecutter.command_line_interface == "click" %}
+    "click",
+    {%- endif %}
+]  # ToDo: Modify according to your needs!
 {%- if cookiecutter.repo_hosting_domain != "no" %}
 [project.urls]
 # important URLs for this project
@@ -75,7 +81,7 @@ Changelog = "https://{{ cookiecutter.repo_hosting_domain }}/{{ cookiecutter.repo
 Tracker = "https://{{ cookiecutter.repo_hosting_domain }}/{{ cookiecutter.repo_username }}/{{ cookiecutter.repo_name }}/issues"
 {%- endif %}
 [project.scripts]
-{{ cookiecutter.project_slug }} = "{{ cookiecutter.package_name }}.__main__:run"
+{{ cookiecutter.command_line_interface_bin_name }} = "{{ cookiecutter.package_name }}.__main__:run"
 
 [project.optional-dependencies]
 lint= ["mypy", "ruff"]
@@ -369,7 +375,9 @@ freeze = "hatch env run --env {env_name} -- uv pip freeze {args}"
 description = "Run tests and coverage"
 features = ["test"]
 [tool.hatch.envs.test.scripts]
+{%- if cookiecutter.command_line_interface in ['plain', 'argparse'] %}
 {{ cookiecutter.command_line_interface_bin_name }} = "python -m {{ cookiecutter.command_line_interface_bin_name }} {args}"
+{%- endif %}
 run_pytest = "pytest -s -o log_cli=true -o log_cli_level=info {args}"
 doctest = "run_pytest --doctest-modules -n 0 {args:src}"
 test = ["doctest", "run_pytest {args:tests}"]
