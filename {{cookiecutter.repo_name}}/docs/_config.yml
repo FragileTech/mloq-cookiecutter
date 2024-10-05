@@ -110,5 +110,5 @@ sphinx:
     napoleon_numpy_docstring  : false
     autodoc_typehints         : "description"
     autoapi_add_toctree_entry : true
-    version                   : {{ cookiecutter.version }}  # The version of the book
-    release                   : {{ cookiecutter.version }}  # The release of the book
+    version                   : "{{ cookiecutter.version }}"  # The version of the book
+    release                   : "{{ cookiecutter.version }}"  # The release of the book

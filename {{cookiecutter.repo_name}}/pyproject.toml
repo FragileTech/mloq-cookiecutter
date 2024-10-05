@@ -64,7 +64,9 @@ dynamic = ["version"]
 # direct dependencies of this package, installed when users `pip install {{ cookiecutter.project_slug }}` later.
 dependencies = [
     "flogging",
+    {%- if cookiecutter.pre_commit %}
     "pre-commit",
+    {%- endif %}
     {%- if cookiecutter.command_line_interface == "click" %}
     "click",
     {%- endif %}
@@ -76,7 +78,7 @@ dependencies = [
 Documentation = "{{ cookiecutter.sphinx_docs_hosting }}"
 Changelog = "{{ cookiecutter.sphinx_docs_hosting }}en/latest/changelog.html"
 {%- else %}
-Changelog = "https://{{ cookiecutter.repo_hosting_domain }}/{{ cookiecutter.repo_username }}/{{ cookiecutter.repo_name }}/blob/master/CHANGELOG.rst"
+Changelog = "https://{{ cookiecutter.repo_hosting_domain }}/{{ cookiecutter.repo_username }}/{{ cookiecutter.repo_name }}/blob/master/CHANGELOG.md"
 {%- endif %}
 Tracker = "https://{{ cookiecutter.repo_hosting_domain }}/{{ cookiecutter.repo_username }}/{{ cookiecutter.repo_name }}/issues"
 {%- endif %}
@@ -288,7 +290,7 @@ enable = """,
 # To disable a specific warning --> action:message:category:module:line
 filterwarnings = ["ignore::UserWarning", 'ignore::DeprecationWarning']
 addopts = "--ignore=scripts --doctest-continue-on-failure"
-
+python_files = ["test_*.py", "tests.py", "test.py"]
 # Code coverage config
 [tool.coverage.run]
 branch = true
@@ -337,7 +339,7 @@ requires = ["hatch-pip-compile~=1.11.2"]
 [tool.hatch.envs.default]
 installer = "uv"
 python = "{{ cookiecutter.target_python_version }}"
-post-install-commands = ["pre-commit install"]
+post-install-commands = [{%- if cookiecutter.pre_commit -%}"pre-commit install"{%- endif -%}]
 {%- if cookiecutter.lock_file_support %}
 type = "pip-compile"
 pip-compile-constraint = "default"  # keep locks between default & others consistent
@@ -359,7 +361,7 @@ features = ["test"]
 {{ cookiecutter.command_line_interface_bin_name }} = "python -m {{ cookiecutter.command_line_interface_bin_name }} {args}"
 {%- endif %}
 run_pytest = "pytest -s -o log_cli=true -o log_cli_level=info {args}"
-doctest = "run_pytest --doctest-modules -n 0 {args:src}"
+doctest = "run_pytest --doctest-modules --doctest-glob=\\*.md -n 0 {args:src}"
 test = ["doctest", "run_pytest {args:tests}"]
 cov = "run_pytest -n auto --cov-report=term-missing --cov-config=pyproject.toml --cov=src/{{ cookiecutter.package_name }} --cov=tests {args}"
 no-cov = "cov --no-cov {args}"

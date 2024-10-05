@@ -1,6 +1,6 @@
 
-Changelog
-=========
+## Changelog
+
 {% set datestring -%}
 {% if cookiecutter.release_date == 'today' -%}
 {% now 'utc', '%Y-%m-%d' %}

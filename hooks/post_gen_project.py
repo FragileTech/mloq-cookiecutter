@@ -70,35 +70,7 @@ def main():
     {% endif %}
 
     # Handle test location
-    {% if cookiecutter.tests_inside_package == 'no' %}
     shutil.rmtree(src / '{{ cookiecutter.package_name }}' / 'tests', ignore_errors=True)
-    {% else %}
-    shutil.rmtree(cwd / 'tests', ignore_errors=True)
-    {% endif %}
-
-    # Handle C extension support
-    {% if cookiecutter.c_extension_support == 'no' %}
-    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}.c').unlink(missing_ok=True)
-    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}.pyx').unlink(missing_ok=True)
-    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}_build.py').unlink(missing_ok=True)
-    {% elif cookiecutter.c_extension_support == 'cffi' %}
-    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}.pyx').unlink(missing_ok=True)
-    {% elif cookiecutter.c_extension_support == 'cython' %}
-    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}.c').unlink(missing_ok=True)
-    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}_build.py').unlink(missing_ok=True)
-    try:
-        subprocess.check_call(['tox', '-e', 'cythonize'])
-    except subprocess.CalledProcessError:
-        subprocess.check_call([sys.executable, '-m', 'tox', '-e', 'cythonize'])
-    {% else %}
-    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}.pyx').unlink(missing_ok=True)
-    src.joinpath('{{ cookiecutter.package_name }}', '_{{ cookiecutter.module_name }}_build.py').unlink(missing_ok=True)
-    {% endif %}
-
-    # Remove CI configuration files
-    cwd.joinpath('.appveyor.yml').unlink(missing_ok=True)
-    cwd.joinpath('appveyor.yml').unlink(missing_ok=True)
-    cwd.joinpath('.travis.yml').unlink(missing_ok=True)
 
     # Handle GitHub Actions
     {% if cookiecutter.github_actions == 'no' %}
@@ -109,21 +81,7 @@ def main():
 
     # Remove CONTRIBUTING file if no repository hosting
     {% if cookiecutter.repo_hosting == 'no' %}
-    cwd.joinpath('CONTRIBUTING.rst').unlink(missing_ok=True)
-    {% endif %}
-
-    # Handle versioning files
-    {% if cookiecutter.setup_py_uses_setuptools_scm == 'yes' %}
-    cwd.joinpath('MANIFEST.in').unlink(missing_ok=True)
-    {% else %}
-    src.joinpath('{{ cookiecutter.package_name }}', '_version.py').unlink(missing_ok=True)
-    {% endif %}
-
-    # Remove version manager files
-    {% if cookiecutter.version_manager == 'bump2version' %}
-    cwd.joinpath('tbump.toml').unlink(missing_ok=True)
-    {% elif cookiecutter.version_manager == 'tbump' %}
-    cwd.joinpath('.bumpversion.cfg').unlink(missing_ok=True)
+    cwd.joinpath('CONTRIBUTING.md').unlink(missing_ok=True)
     {% endif %}
 
     # Remove LICENSE if not applicable
