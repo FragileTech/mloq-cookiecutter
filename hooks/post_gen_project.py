@@ -89,17 +89,12 @@ def main():
     cwd.joinpath('LICENSE').unlink(missing_ok=True)
     {% endif %}
 
-    # Remove setup.cfg
-    cwd.joinpath('setup.cfg').unlink(missing_ok=True)
-
     # Determine terminal width for formatting
     width = min(140, shutil.get_terminal_size(fallback=(140, 0)).columns)
 
-    # Logging messages
-    logger.info(" Generating CI configuration ".center(width, "#"))
+    # Set up pre-commit
+    {% if cookiecutter.pre_commit == "yes" %}
     logger.info(" Setting up pre-commit ".center(width, "#"))
-
-    # Set up pre-commit hooks
     if cwd.joinpath('.git').exists():
         try:
             subprocess.check_call(['pre-commit', 'install', '--install-hooks'])
@@ -108,7 +103,7 @@ def main():
             logger.error(f"Failed to set up pre-commit: {e}")
     else:
         logger.info('Skipping pre-commit install.')
-
+    {% endif %}
     # Success message
     logger.info(f" Successfully created `{{ cookiecutter.repo_name }}` ".center(width, "#"))
     logger.info('See .cookiecutterrc for instructions on regenerating the project.')
