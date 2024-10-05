@@ -1,4 +1,5 @@
-# Welcome to {{ cookiecutter.project_name }} Jupyter Book
+```{include} source/project/README.md
+```
 
 This is the main documentation page for **{{ cookiecutter.project_name }}**.
 

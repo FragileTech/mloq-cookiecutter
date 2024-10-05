@@ -140,6 +140,7 @@ docs = { cmd = "hatch run docs:docs" }
 build-docs = { cmd = "hatch run docs:build"}
 sphinx = { cmd = "hatch run docs:sphinx" }
 serve-docs = { cmd = "hatch run docs:serve" }
+all = {chain= ["lint", "build-docs", "test"]}
 
 [tool.ruff]
 # Assume Python 3.10
@@ -378,6 +379,10 @@ PYTHONUNBUFFERED = "1"
 [tool.hatch.envs.docs.scripts]
 features = ["docs"]
 build = [
+    "cp AUTHORS.md docs/source/project/",
+    "cp CHANGELOG.md docs/source/project/",
+    "cp CONTRIBUTING.md docs/source/project/",
+    "cp README.md docs/source/project/",
     "jupyter-book build docs/ ",
     "uv pip freeze > docs/requirements.txt",
 ]

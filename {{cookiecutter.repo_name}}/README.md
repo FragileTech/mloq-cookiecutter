@@ -1,9 +1,9 @@
-# {{ cookiecutter.project_name }}
+# Welcome to {{ cookiecutter.project_name }}
 
 {{ cookiecutter.project_short_description }}
 
 {% if cookiecutter.license != "no" %}
-* Free software: {{ cookiecutter.license }}
+* License: {{ cookiecutter.license }}
 {% endif %}
 
 ## Features
@@ -247,9 +247,9 @@ Name of the CLI bin/executable file (set the console script name in `pyproject.t
 
 License to use. Available options:
 
+- MIT license
 - BSD 2-Clause License
 - BSD 3-Clause License
-- MIT license
 - ISC license
 - Apache Software License 2.0
 - GNU Lesser General Public License v3 or later (LGPLv3+)

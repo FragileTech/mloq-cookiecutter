@@ -22,9 +22,9 @@
     "lock_file_support": false,
     "version": "0.1.0",
     "license": [
+        "MIT license",
         "BSD 2-Clause License",
         "BSD 3-Clause License",
-        "MIT license",
         "ISC license",
         "Apache Software License 2.0",
         "GNU Lesser General Public License v3 or later (LGPLv3+)",

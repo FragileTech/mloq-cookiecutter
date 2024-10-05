@@ -2,6 +2,9 @@
 
 Contributions are welcome, and they are greatly appreciated! Every little bit helps, and credit will always be given.
 
+```{contents}
+```
+
 ## Bug reports
 
 When [reporting a bug](https://{{ cookiecutter.repo_hosting_domain }}/{{ cookiecutter.repo_username }}/{{ cookiecutter.repo_name }}/issues) please include:

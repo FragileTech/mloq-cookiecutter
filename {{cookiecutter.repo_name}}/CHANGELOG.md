@@ -1,5 +1,4 @@
-
-## Changelog
+# Changelog
 
 {% set datestring -%}
 {% if cookiecutter.release_date == 'today' -%}
