@@ -11,7 +11,7 @@ on:
 env:
   PROJECT_NAME: {{ cookiecutter.package_name }}
   PROJECT_DIR: src/{{ cookiecutter.package_name }}
-  VERSION_FILE: src/{{ cookiecutter.package_name }}/version.py
+  VERSION_FILE: "src/{{ cookiecutter.package_name }}/version.py .bumpversion.cfg docs/_config.yml"
   DEFAULT_BRANCH: {{ cookiecutter.repo_main_branch }}
   BOT_NAME: fragile-bot
   BOT_EMAIL: bot@fragile.tech

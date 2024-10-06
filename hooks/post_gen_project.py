@@ -8,7 +8,7 @@ import sys
 
 try:
     import flogging
-    flogging.setup()
+    flogging.setup(allow_trailing_dot=True)
 except ImportError:
     pass
 
