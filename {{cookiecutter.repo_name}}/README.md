@@ -20,12 +20,8 @@ This is an "all inclusive" sort of template.
 - Documentation with [Sphinx](http://sphinx-doc.org/), ready for [ReadTheDocs](https://readthedocs.org/).
 {% endif %}
 - Configurations for:
-  - [isort](https://pypi.org/project/isort)
   - [bumpversion](https://pypi.org/project/bump2version) ([bump2version](https://github.com/c4urself/bump2version) required)
   - [ruff](https://docs.astral.sh/ruff/) for linting and formatting your code.
-- Packaging and code quality checks. This template comes with a Hatch environment (`check`) that will:
-  - Check if your `README.md` is valid.
-  - Check if the `MANIFEST.in` has any issues.
 
 ## Requirements
 
