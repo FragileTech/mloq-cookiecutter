@@ -121,7 +121,7 @@ def main():
             bin_name_without_ext=bin_name_without_ext
         )
         logger.error(error_msg)
-        sys.exit(1)
+        sys.exit(0)
 
 if __name__ == "__main__":
     main()
